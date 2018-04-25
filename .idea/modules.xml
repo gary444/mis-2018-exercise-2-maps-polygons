@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/MIS_ex2.iml" filepath="$PROJECT_DIR$/MIS_ex2.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/mis-2018-exercise-2-maps-polygons.iml" filepath="$PROJECT_DIR$/mis-2018-exercise-2-maps-polygons.iml" />
     </modules>
   </component>
 </project>

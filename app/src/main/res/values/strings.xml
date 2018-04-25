@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">polygons</string>
     <string name="title_activity_maps">Map</string>
+    <string name="google_maps_API_key">AIzaSyCJAWFGrqtlMbcqQpAeqtLqOSFJ43Pdeck</string>
+    <string name="label_input_hint">Enter Label For New Point...</string>
+    <string name="clear_btn_text">Clear All</string>
+    <string name="hint_text_string">Long press on map to add markers</string>
+    <string name="hint_text_string_polygon">Long press on map to add markers to polygon</string>
+
+    <string name="polygon_btn_text_start">Start Polygon</string>
+    <string name="polygon_btn_text_end">End Polygon</string>
 </resources>
