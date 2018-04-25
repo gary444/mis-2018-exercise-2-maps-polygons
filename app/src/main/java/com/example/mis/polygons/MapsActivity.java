@@ -49,7 +49,6 @@ import static java.lang.Math.toRadians;
 
 /*
 Extensive additions from google maps sample project: CurrentPlaceDetailsOnMap
-
 https://developers.google.com/maps/documentation/android-api/current-place-tutorial
 */
 
@@ -262,11 +261,8 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
     @Override
     public void onMapLongClick(LatLng latLng) {
 
+        //add a marker
         String marker_txt = label_input.getText().toString();
-
-//        char c = marker_txt.charAt(0);
-//        Log.d(TAG, "onMapLongClick: ascii " + (int)c);
-
         label_input.setText("");
         if (marker_txt.equals(""))
             marker_txt = "marker " + marker_count;
@@ -277,7 +273,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
             addMarkertoPolygon(latLng);
     }
 
-
+    //draws and saves marker
     private void newMarker(LatLng marker_position, String marker_txt, boolean centroid){
         marker_count++;
         drawMarker(marker_position, marker_txt, centroid);
@@ -297,9 +293,8 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
             m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
         }
 
-
-        Log.d(TAG, "drawMarker: marker drawn with label: " + marker_txt);
     }
+    //saves marker info in shared prefs
     private void saveMarker(LatLng marker_position, String marker_txt){
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
@@ -374,6 +369,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
             }
         }
     }
+    //save polygon to shared prefs
     private void savePolygon(int numPoints){
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
@@ -393,6 +389,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
         polygon_count++;
     }
 
+    //load polygons form shared prefs
     private void loadPolygons(){
 
         boolean continue_load = true;
@@ -458,8 +455,8 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
         }
     }
 
-    private void addMarkertoPolygon(LatLng marker_position){
 
+    private void addMarkertoPolygon(LatLng marker_position){
 
         //if this is the first point in the line
         // polyline must be initialised
@@ -473,7 +470,6 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
             points.add(marker_position);
             polyline.setPoints(points);
         }
-
     }
 
     //completes polygon if necessary and handles area and centroid calculation
@@ -508,8 +504,6 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
 
                     //add centroid marker
                     // with area as label
-                    //TODO: check if completed polygons are required
-
                     double area = calculatePolygonAreaFromLatLng(polygon.getPoints());
                     LatLng centroid = calculateCentroid(polygon.getPoints());
                     //add marker
@@ -532,8 +526,9 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
                     Toast.makeText(this, "At least 3 markers are needed for a polygon",
                             Toast.LENGTH_SHORT).show();
 
-                    //reset polyline here - delete x most recent markers?
-                    // dialog to ask if non-polygon markers should be kept?
+                    //reset polyline here - delete x most recent markers
+                    polyline.remove();
+                    polyline = null;
                 }
             }
             else {
@@ -622,11 +617,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
         //calculate centroid
         //ref Paul Bourke
         //http://www.seas.upenn.edu/~sys502/extra_materials/Polygon%20Area%20and%20Centroid.pdf
-        ArrayList<Point> points_d = new ArrayList<>();
-        for (LatLng ll : points){
-            points_d.add(new Point(ll.longitude, ll.latitude));
-        }
-//        double area = calcPolygonAreaDoubles(points_d);
+
         double centr_lon = 0.0, centr_lat = 0.0;
         double sum = 0.0;
 
@@ -635,7 +626,6 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
             j = (i+1) % points.size();
             LatLng p1 = points.get(i);
             LatLng p2 = points.get(j);
-//            double factor = (p1.latitude * p2.longitude) - (p2.latitude * p1.longitude);
             double factor = (p1.longitude * p2.latitude) - (p2.longitude * p1.latitude);
             sum += factor;
             centr_lon += (p1.longitude + p2.longitude) * factor;
@@ -645,9 +635,6 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
         double area = 0.5 * sum;
         centr_lat = centr_lat / 6 / area;
         centr_lon = centr_lon / 6 / area;
-
-//        centr_lat /= (6.0 * area);
-//        centr_lon /= (6.0 * area);
 
         return new LatLng(centr_lat, centr_lon);
     }

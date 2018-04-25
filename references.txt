@@ -1,0 +1,8 @@
+Centroid algorithms:
+
+Bourke, P. 1988. Calculating The Area And Centroid Of A Polygon. Accessed 25th April from:  http://www.seas.upenn.edu/~sys502/extra_materials/Polygon%20Area%20and%20Centroid.pdf.
+
+Bourke, P. 1997. Polygons and Meshes. Accessed 25th April from http://paulbourke.net/geometry/polygonmesh/.
+
+Brundritt, R., 2008. Centroid of a Polygon. Ricky's Microsoft Maps Blog.Accessed 25th April from https://rbrundritt.wordpress.com/2008/10/08/centroid-of-a-polygon/.
+
