@@ -62,6 +62,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
 
     private GoogleMap mMap;
     private int marker_count;
+    private int polygon_count;
     private boolean mLocationPermissionGranted;
     private boolean drawing_polygon;
     private Polyline polyline;
@@ -108,6 +109,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         marker_count = 0;
+        polygon_count = 0;
         drawing_polygon = false;
 
     }
@@ -138,6 +140,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
 
         //load saved markers from preferences
         loadMarkers();
+        loadPolygons();
 
         Log.d(TAG, "onMapReady: map loaded");
     }
@@ -243,6 +246,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
                 Log.d(TAG, "onClick: clearing markers and polygons");
                 mMap.clear();
                 marker_count = 0;
+                polygon_count = 0;
                 polyline = null;
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.clear();
@@ -328,6 +332,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
                 Set<String> marker_info = sharedPreferences.getStringSet(prefString, null);
                 double longitude = 0.0, latitude = 0.0;
                 String marker_text = "";
+                boolean isCentroid = false;
 
                 if (marker_info != null){
 
@@ -339,22 +344,28 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
                             longitude = Double.parseDouble(pref.substring(pref.lastIndexOf('=') + 1));
                         }
                         else if (pref.startsWith("label=")){
-                            marker_text = pref.substring(pref.lastIndexOf('=') + 1);
+                            marker_text = pref.substring(pref.indexOf('=') + 1);
+                            if (marker_text.startsWith("Polygon Area"))
+                                isCentroid = true;
                         }
                         else {
                             Log.d(TAG, "loadMarkers: erroneous marker info found");
                         }
                     }
                     // add marker
-                    mMap.addMarker(new MarkerOptions()
+                    Marker m = mMap.addMarker(new MarkerOptions()
                             .position(new LatLng(latitude,longitude))
                             .title(marker_text));
                     marker_count++;
 
+                    //set colour
+                    if (isCentroid)
+                        m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+                    else
+                        m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+
                     marker_to_load++;
                 }
-
-
             }
             else {
                 //assume no more markers with higher numbers - stop load
@@ -362,8 +373,89 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
                 continue_load = false;
             }
         }
+    }
+    private void savePolygon(int numPoints){
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        //create a new string set
+        Set<String> prefSet = new HashSet<String>();
+        //add marker indexes that make up polygon
+        //assume that centroid hasnt been added yet
+        for (int marker = marker_count - 1; marker > (marker_count - 1 - numPoints); marker--){
+            prefSet.add(Integer.toString(marker));
+        }
+
+        editor.putStringSet("polygon" + polygon_count, prefSet);
+        editor.apply();
+
+        Log.d(TAG, "savePolygon: saved polygon " + polygon_count + "to preferences");
+
+        polygon_count++;
+    }
+
+    private void loadPolygons(){
+
+        boolean continue_load = true;
+        int polygon_to_load = 0;
+        while (continue_load){
+
+            String prefString = "polygon" + Integer.toString(polygon_to_load);
+            if (sharedPreferences.contains(prefString)){
+                //if found polygon
+                //get markers that should be loaded
+                Set<String> polygon_markers = sharedPreferences.getStringSet(prefString, null);
+                ArrayList<LatLng> polygon_points = new ArrayList<>();
+
+                if (polygon_markers != null){
+
+                    //find lowest numbered marker
+                    int firstMarker = Integer.MAX_VALUE;
+                    for (String s : polygon_markers){
+                        if (Integer.parseInt(s) < firstMarker)
+                            firstMarker = Integer.parseInt(s);
+                    }
+
+                    //for each marker in polygon - load in order
+                    for (int i = firstMarker; i < firstMarker + polygon_markers.size(); i++){
+                        //find marker in preferences and retrieve lat and long
+                        double mLat = 0.0, mLong = 0.0;
+                        String marker_key = "marker" + i;
+                        if (sharedPreferences.contains(marker_key)){
+                            Set<String> marker_info = sharedPreferences.getStringSet(marker_key, null);
+                            for (String s : marker_info){
+                                if (s.startsWith("lat"))
+                                    mLat = Double.parseDouble(s.substring(s.indexOf('=') + 1));
+                                else if (s.startsWith("lon"))
+                                    mLong = Double.parseDouble(s.substring(s.indexOf('=') + 1));
+                            }
+                            //add point to polygon as first point - reverse scanning order
+                            polygon_points.add(0, new LatLng(mLat, mLong));
+                        }
+                        else {
+                            Log.d(TAG, "loadPolygons: error retrieving a marker from preferences");
+                        }
+                    }
+
+                    // add polygon
+                    PolygonOptions po = new PolygonOptions();
+                    po.fillColor(0x7FF9CEBB);
+                    po.strokeColor(0xFFF9CEBB);
+                    po.clickable(true);
+                    for (LatLng point : polygon_points) {
+                        po.add(point);
+                    }
+                    Polygon polygon = mMap.addPolygon(po);
 
 
+                    polygon_count++;
+                    polygon_to_load++;
+                }
+            }
+            else {
+                //assume no more polygons with higher numbers - stop load
+                continue_load = false;
+            }
+        }
     }
 
     private void addMarkertoPolygon(LatLng marker_position){
@@ -384,6 +476,7 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
 
     }
 
+    //completes polygon if necessary and handles area and centroid calculation
     private void handlePolygons(){
 
         //check if starting or finishing
@@ -410,6 +503,9 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
                     Polygon polygon = mMap.addPolygon(po);
                     Toast.makeText(this, "Polygon Created", Toast.LENGTH_SHORT).show();
 
+                    //save polygon
+                    savePolygon(polygon_points.size());
+
                     //add centroid marker
                     // with area as label
                     //TODO: check if completed polygons are required
@@ -421,6 +517,9 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
                     String area_text;
                     if (area < 100000){
                         area_text = String.format("%.0f m2", area);
+                    }
+                    else if (area > 1000000000){
+                        area_text = String.format("%.0f km2", area/1000000);
                     }
                     else {
                         area_text = String.format("%.3f km2", area/1000000);
@@ -459,7 +558,6 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
     private double calcPolygonAreaDoubles(List<Point> points) {
 
         //http://paulbourke.net/geometry/polygonmesh/PolygonUtilities.java
-
         //check that last point is equal to first point - add if not
         if (points.get(0).x != points.get(points.size() - 1).x
                 || points.get(0).y != points.get(points.size() - 1).y){
@@ -528,20 +626,28 @@ public class MapsActivity extends FragmentActivity implements View.OnClickListen
         for (LatLng ll : points){
             points_d.add(new Point(ll.longitude, ll.latitude));
         }
-        double area = calcPolygonAreaDoubles(points_d);
+//        double area = calcPolygonAreaDoubles(points_d);
         double centr_lon = 0.0, centr_lat = 0.0;
+        double sum = 0.0;
 
         int j;
         for (int i = 0; i < points.size(); i++){
             j = (i+1) % points.size();
             LatLng p1 = points.get(i);
             LatLng p2 = points.get(j);
-            double factor = (p1.latitude * p2.longitude) - (p2.latitude * p1.longitude);
+//            double factor = (p1.latitude * p2.longitude) - (p2.latitude * p1.longitude);
+            double factor = (p1.longitude * p2.latitude) - (p2.longitude * p1.latitude);
+            sum += factor;
             centr_lon += (p1.longitude + p2.longitude) * factor;
             centr_lat += (p1.latitude + p2.latitude) * factor;
         }
-        centr_lat /= (6.0 * area);
-        centr_lon /= (6.0 * area);
+
+        double area = 0.5 * sum;
+        centr_lat = centr_lat / 6 / area;
+        centr_lon = centr_lon / 6 / area;
+
+//        centr_lat /= (6.0 * area);
+//        centr_lon /= (6.0 * area);
 
         return new LatLng(centr_lat, centr_lon);
     }

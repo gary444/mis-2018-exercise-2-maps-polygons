@@ -11,17 +11,24 @@
         android:layout_height="wrap_content"
         android:hint="@string/label_input_hint"/>
 
-    <Button
-        android:id="@+id/clear_btn"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/clear_btn_text"/>
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/polygon_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/polygon_btn_text_start"/>
+        <Button
+            android:id="@+id/clear_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/clear_btn_text"/>
+
+        <Button
+            android:id="@+id/polygon_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/polygon_btn_text_start"/>
+
+    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
